@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'snippet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,63 +11,113 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
-  final _vinController = TextEditingController();
-  bool _isButtonEnabled = false;
-  String? _errorMessage;
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _vinController = TextEditingController();
+  String _statusMessage = '';
+  Map<String, String>? userData;
 
   @override
   void initState() {
     super.initState();
-    _vinController.addListener(_validateInput);
+    _loadUserData();
   }
 
-  @override
-  void dispose() {
-    _vinController.dispose();
-    super.dispose();
+  Future<void> _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userDataString = prefs.getString('userData');
+    if (userDataString != null) {
+      setState(() {
+        userData = Map<String, String>.from(
+            jsonDecode(userDataString)); // Use jsonDecode
+      });
+    }
   }
 
-  void _validateInput() {
-    final vin = _vinController.text;
+  Future<void> _fetchVinData() async {
+    if (userData == null) return;
+
+    try {
+      final response = await CosChallenge.httpClient.get(
+        Uri.https('anyUrl', ''),
+        headers: {CosChallenge.user: userData!['name'] ?? 'unknownUser'},
+      );
+
+      if (response.statusCode == 200) {
+        _handleSuccess(response.body);
+      } else if (response.statusCode == 300) {
+        _handleMultipleOptions(response.body);
+      } else {
+        _handleError(response.reasonPhrase);
+      }
+    } catch (e) {
+      setState(() {
+        _statusMessage = 'An error occurred: $e';
+      });
+    }
+  }
+
+  void _handleSuccess(String responseBody) {
     setState(() {
-      _isButtonEnabled = _isValidVIN(vin);
-      _errorMessage = _isButtonEnabled ? null : 'Invalid VIN';
+      _statusMessage = 'Data fetched successfully';
     });
   }
 
-  bool _isValidVIN(String vin) {
-    final regex = RegExp(r'^[A-HJ-NPR-Z0-9]{17}$');
-    return regex.hasMatch(vin);
+  void _handleMultipleOptions(String responseBody) {
+    setState(() {
+      _statusMessage = 'Multiple options available. Please refine your search.';
+    });
   }
 
-  void _submitVIN() async {
-   
+  void _handleError(String? reasonPhrase) {
+    setState(() {
+      _statusMessage = 'Error: $reasonPhrase';
+    });
   }
 
-
+  Widget _buildVinForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: <Widget>[
+          TextFormField(
+            controller: _vinController,
+            decoration: const InputDecoration(labelText: 'VIN'),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter the VIN';
+              }
+              final vinPattern = RegExp(r'^[A-HJ-NPR-Z0-9]{17}$');
+              if (!vinPattern.hasMatch(value)) {
+                return 'Please enter a valid 17-character VIN';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() ?? false) {
+                _fetchVinData();
+              }
+            },
+            child: const Text('Submit'),
+          ),
+          const SizedBox(height: 20),
+          Text(_statusMessage),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Code challenge'),
+      ),
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _vinController,
-              decoration: InputDecoration(
-                labelText: 'Enter VIN',
-                errorText: _errorMessage,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _isButtonEnabled ? _submitVIN : null,
-              child: const Text('Submit'),
-            ),
-          ],
-        ),
+        child: _buildVinForm(),
       ),
     );
   }
