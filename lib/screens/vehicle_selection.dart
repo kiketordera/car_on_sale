@@ -1,4 +1,4 @@
-import 'package:car_on_sale/car_options.dart';
+import 'package:car_on_sale/models/vehicle_options.dart';
 import 'package:flutter/material.dart';
 
 class VehicleSelectionScreen extends StatelessWidget {
@@ -22,7 +22,6 @@ class VehicleSelectionScreen extends StatelessWidget {
             subtitle: Text(
                 'Similarity: ${option.similarity}\nContainer: ${option.containerName}'),
             onTap: () {
-              // Handle vehicle selection
               Navigator.pop(context, option.externalId);
             },
           );

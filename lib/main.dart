@@ -1,7 +1,7 @@
-import 'package:car_on_sale/home.dart';
-import 'package:car_on_sale/signup.dart';
+import 'package:car_on_sale/screens/home.dart';
+import 'package:car_on_sale/screens/signup.dart';
+import 'package:car_on_sale/services/local_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('VIN Validator')),
+        appBar: AppBar(title: const Text('COS Challenge')),
         body: FutureBuilder(
           future: _checkUserSignedUp(),
           builder: (context, snapshot) {
@@ -32,7 +32,8 @@ class MyApp extends StatelessWidget {
   }
 
   Future<bool> _checkUserSignedUp() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey('userData');
+    LocalStorageService localStorageService = LocalStorageService();
+    Map<String, String>? userId = await localStorageService.getUserData();
+    return userId != null;
   }
 }

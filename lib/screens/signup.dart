@@ -24,7 +24,7 @@ class SignUpScreenState extends State<SignUpScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     Map<String, String> userData =
         _controllers.map((key, value) => MapEntry(key, value.text));
-    await prefs.setString('userData', jsonEncode(userData)); // Use jsonEncode
+    await prefs.setString('userData', jsonEncode(userData));
   }
 
   Widget _buildTextField(String label, String key) {

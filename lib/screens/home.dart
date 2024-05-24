@@ -1,8 +1,10 @@
-import 'package:car_on_sale/car_options.dart';
+import 'package:car_on_sale/models/vehicle_options.dart';
+import 'package:car_on_sale/screens/auction_data.dart';
+import 'package:car_on_sale/screens/vehicle_selection.dart';
+import 'package:car_on_sale/services/api_service.dart';
+import 'package:car_on_sale/services/local_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'snippet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,10 +14,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
+  final _apiService = ApiService();
+  final _localStorageService = LocalStorageService();
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _vinController = TextEditingController();
   String _statusMessage = '';
-  Map<String, String>? userData;
+  Map<String, String>? _userData;
 
   @override
   void initState() {
@@ -24,24 +28,17 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userDataString = prefs.getString('userData');
-    if (userDataString != null) {
-      setState(() {
-        userData = Map<String, String>.from(jsonDecode(userDataString));
-      });
-    }
+    final userData = await _localStorageService.getUserData();
+    setState(() {
+      _userData = userData;
+    });
   }
 
   Future<void> _fetchVinData() async {
-    if (userData == null) return;
+    if (_userData == null) return;
 
     try {
-      final response = await CosChallenge.httpClient.get(
-        Uri.https('www.caronsale.com'),
-        headers: {CosChallenge.user: userData!['name'] ?? 'unknownUser'},
-      );
-
+      final response = await _apiService.fetchData(_vinController.text);
       if (response.statusCode == 200) {
         _handleSuccess(response.body);
       } else if (response.statusCode == 300) {
@@ -60,7 +57,7 @@ class HomeScreenState extends State<HomeScreen> {
         );
       } else {
         setState(() {
-          _statusMessage = 'An error occurred: $e';
+          _statusMessage = 'No data in cache';
         });
       }
     }
@@ -151,75 +148,6 @@ class HomeScreenState extends State<HomeScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: _buildVinForm(),
-      ),
-    );
-  }
-}
-
-class VehicleSelectionScreen extends StatelessWidget {
-  final List<VehicleOption> options;
-
-  const VehicleSelectionScreen(this.options, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Sort options by similarity
-    options.sort((a, b) => b.similarity.compareTo(a.similarity));
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("Select Vehicle")),
-      body: ListView.builder(
-        itemCount: options.length,
-        itemBuilder: (context, index) {
-          final option = options[index];
-          return ListTile(
-            title: Text('${option.make} ${option.model}'),
-            subtitle: Text(
-                'Similarity: ${option.similarity}\nContainer: ${option.containerName}'),
-            onTap: () {
-              Navigator.pop(context, option.externalId);
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class AuctionDataScreen extends StatelessWidget {
-  final String data;
-
-  const AuctionDataScreen(this.data, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final auctionData = json.decode(data);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("Auction Data")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Price: ${auctionData['price']}",
-                style: const TextStyle(fontSize: 18)),
-            Text("Model: ${auctionData['model']}",
-                style: const TextStyle(fontSize: 18)),
-            Text("UUID: ${auctionData['_fk_uuid_auction']}",
-                style: const TextStyle(fontSize: 18)),
-            if (auctionData['feedback'] != null)
-              Text(
-                "${auctionData['positiveCustomerFeedback'] ? "Positive" : "Negative"} Feedback: ${auctionData['feedback']}",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: auctionData['positiveCustomerFeedback']
-                      ? Colors.green
-                      : Colors.red,
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }
