@@ -38,7 +38,7 @@ class HomeScreenState extends State<HomeScreen> {
 
     try {
       final response = await CosChallenge.httpClient.get(
-        Uri.https('anyUrl', ''),
+        Uri.https('www.caronsale.com'),
         headers: {CosChallenge.user: userData!['name'] ?? 'unknownUser'},
       );
 
@@ -63,8 +63,18 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleMultipleOptions(String responseBody) {
-    setState(() {
-      _statusMessage = 'Multiple options available. Please refine your search.';
+    List<VehicleOption> options = parseVehicleOptions(responseBody);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VehicleSelectionScreen(options),
+      ),
+    ).then((selectedVehicleId) {
+      if (selectedVehicleId != null) {
+        setState(() {
+          _statusMessage = 'Selected vehicle ID: $selectedVehicleId';
+        });
+      }
     });
   }
 
@@ -118,6 +128,69 @@ class HomeScreenState extends State<HomeScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: _buildVinForm(),
+      ),
+    );
+  }
+}
+
+class VehicleOption {
+  final String make;
+  final String model;
+  final String containerName;
+  final int similarity;
+  final String externalId;
+
+  VehicleOption({
+    required this.make,
+    required this.model,
+    required this.containerName,
+    required this.similarity,
+    required this.externalId,
+  });
+
+  factory VehicleOption.fromJson(Map<String, dynamic> json) {
+    return VehicleOption(
+      make: json['make'],
+      model: json['model'],
+      containerName: json['containerName'],
+      similarity: json['similarity'],
+      externalId: json['externalId'],
+    );
+  }
+}
+
+List<VehicleOption> parseVehicleOptions(String responseBody) {
+  final parsed = json.decode(responseBody).cast<Map<String, dynamic>>();
+  return parsed
+      .map<VehicleOption>((json) => VehicleOption.fromJson(json))
+      .toList();
+}
+
+class VehicleSelectionScreen extends StatelessWidget {
+  final List<VehicleOption> options;
+
+  const VehicleSelectionScreen(this.options, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Sort options by similarity
+    options.sort((a, b) => b.similarity.compareTo(a.similarity));
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Select Vehicle")),
+      body: ListView.builder(
+        itemCount: options.length,
+        itemBuilder: (context, index) {
+          final option = options[index];
+          return ListTile(
+            title: Text('${option.make} ${option.model}'),
+            subtitle: Text(
+                'Similarity: ${option.similarity}\nContainer: ${option.containerName}'),
+            onTap: () {
+              Navigator.pop(context, option.externalId);
+            },
+          );
+        },
       ),
     );
   }
