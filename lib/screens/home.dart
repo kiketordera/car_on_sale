@@ -1,10 +1,11 @@
+import 'dart:convert';
+
 import 'package:car_on_sale/models/vehicle_options.dart';
 import 'package:car_on_sale/screens/auction_data.dart';
 import 'package:car_on_sale/screens/vehicle_selection.dart';
 import 'package:car_on_sale/services/api_service.dart';
 import 'package:car_on_sale/services/local_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +20,7 @@ class HomeScreenState extends State<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _vinController = TextEditingController();
   String _statusMessage = '';
-  Map<String, String>? _userData;
+  Map<String, dynamic>? _userData;
 
   @override
   void initState() {
@@ -47,9 +48,10 @@ class HomeScreenState extends State<HomeScreen> {
         _handleError(response.reasonPhrase);
       }
     } catch (e) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? cachedData = prefs.getString('auctionData');
-      if (cachedData != null && mounted) {
+      Map<String, dynamic>? cache = await _localStorageService.getCacheData();
+
+      if (cache != null && mounted) {
+        String? cachedData = jsonEncode(cache);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -64,8 +66,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleSuccess(String responseBody) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auctionData', responseBody);
+    await _localStorageService.saveCacheData(jsonDecode(responseBody));
 
     setState(() {
       _statusMessage = 'Data fetched successfully';

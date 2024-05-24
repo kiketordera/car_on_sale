@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
 
   Future<bool> _checkUserSignedUp() async {
     LocalStorageService localStorageService = LocalStorageService();
-    Map<String, String>? userId = await localStorageService.getUserData();
+    Map<String, dynamic>? userId = await localStorageService.getUserData();
     return userId != null;
   }
 }

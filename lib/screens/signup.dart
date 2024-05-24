@@ -1,6 +1,5 @@
+import 'package:car_on_sale/services/local_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'home.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -12,6 +11,8 @@ class SignUpScreen extends StatefulWidget {
 
 class SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _localStorageService = LocalStorageService();
+
   final Map<String, TextEditingController> _controllers = {
     'name': TextEditingController(),
     'surname': TextEditingController(),
@@ -21,10 +22,9 @@ class SignUpScreenState extends State<SignUpScreen> {
   };
 
   Future<void> _saveUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    Map<String, String> userData =
+    Map<String, dynamic> userData =
         _controllers.map((key, value) => MapEntry(key, value.text));
-    await prefs.setString('userData', jsonEncode(userData));
+    await _localStorageService.saveUserData(userData);
   }
 
   Widget _buildTextField(String label, String key) {
