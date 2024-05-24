@@ -27,8 +27,7 @@ class HomeScreenState extends State<HomeScreen> {
     String? userDataString = prefs.getString('userData');
     if (userDataString != null) {
       setState(() {
-        userData = Map<String, String>.from(
-            jsonDecode(userDataString)); // Use jsonDecode
+        userData = Map<String, String>.from(jsonDecode(userDataString));
       });
     }
   }
@@ -50,16 +49,37 @@ class HomeScreenState extends State<HomeScreen> {
         _handleError(response.reasonPhrase);
       }
     } catch (e) {
-      setState(() {
-        _statusMessage = 'An error occurred: $e';
-      });
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? cachedData = prefs.getString('auctionData');
+      if (cachedData != null && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => AuctionDataScreen(cachedData)),
+        );
+      } else {
+        setState(() {
+          _statusMessage = 'An error occurred: $e';
+        });
+      }
     }
   }
 
-  void _handleSuccess(String responseBody) {
+  void _handleSuccess(String responseBody) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auctionData', responseBody);
+
     setState(() {
       _statusMessage = 'Data fetched successfully';
     });
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => AuctionDataScreen(responseBody)),
+      );
+    }
   }
 
   void _handleMultipleOptions(String responseBody) {
@@ -191,6 +211,45 @@ class VehicleSelectionScreen extends StatelessWidget {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class AuctionDataScreen extends StatelessWidget {
+  final String data;
+
+  const AuctionDataScreen(this.data, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final auctionData = json.decode(data);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Auction Data")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Price: ${auctionData['price']}",
+                style: const TextStyle(fontSize: 18)),
+            Text("Model: ${auctionData['model']}",
+                style: const TextStyle(fontSize: 18)),
+            Text("UUID: ${auctionData['uuid']}",
+                style: const TextStyle(fontSize: 18)),
+            if (auctionData['feedback'] != null)
+              Text(
+                "Feedback: ${auctionData['feedback']}",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: auctionData['feedback'] == 'positive'
+                      ? Colors.green
+                      : Colors.red,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

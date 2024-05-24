@@ -153,7 +153,7 @@ enum _ResponseCode {
       "updatedAt": "2023-01-05T14:08:42.153Z",
       "make": "Toyota",
       "model": "GT 86 Basis",
-      "externalId": "DE003-018601450020008"
+      "externalId": "DE003-018601450020008",
       "_fk_sellerUser": "25475e37-6973-483b-9b15-cfee721fc29f",
       "price": ${Random().nextInt(1000)},
       "positiveCustomerFeedback": ${Random().nextBool()},
