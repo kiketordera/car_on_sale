@@ -1,4 +1,4 @@
-import 'package:car_on_sale/snippet.dart';
+import 'package:car_on_sale/util/snippet.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
