@@ -33,6 +33,11 @@ A new Flutter project.
 #### 5. Main
 - **File:** `main.dart` initializes the app and sets up the navigation.
 
+#### 6. Tests
+- **Purpose:** Make the app more robust and ship better code quality.
+- **Files:**
+  - `local_storage_test.dart`: Test class that test the cache functionallity.
+
 ### Extra: VIN Validation
 
 The Regex expresion in the `regex.dart` file contains functions for validating Vehicle Identification Numbers (VINs). VINs are 17 characters long and can include any alphanumeric characters except for the letters I, O, and Q, which are excluded to avoid confusion with numerals 1 and 0.
