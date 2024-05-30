@@ -16,7 +16,7 @@ A new Flutter project.
   - `auction_data.dart`: Displays auction data to the user.
   - `home.dart`: The home screen of the app.
   - `signup.dart`: Allows users to enter their identification data.
-  - `vehicle_selection.dart` and `vehicles_selection.dart`: Screens for selecting vehicles based on fetched data.
+  - `vehicles_selection.dart`: Screen for selecting vehicles based on fetched data.
 
 #### 3. Services
 - **Purpose:** Handles business logic and data operations, including API calls and local storage.
